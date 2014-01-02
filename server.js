@@ -2,8 +2,12 @@
 
 // set up ========================
 var express = require('express');
-var app = express(); // create our app w/ express
+var http = require("http")
 var mongoose = require('mongoose'); // mongoose for mongodb
+
+var app = express();
+var server = http.createServer(app);
+var io = require("socket.io").listen(server);
 
 // configuration =================
 
@@ -49,9 +53,18 @@ app.post('/api/appointments', function(req, res) {
 		Appointment.find(function(err, appointments) {
 			if (err)
 				res.send(err);
+
+			// broadcast the changes to all interested sockets
+			io.sockets.emit("appointments_updated", {
+				appointments: JSON.stringify(appointments)
+			});
+
 			res.json(appointments);
 		});
 	});
+
+
+
 });
 
 // application -------------------------------------------------------------
@@ -60,5 +73,5 @@ app.get('*', function(req, res) {
 });
 
 // listen (start app with node server.js) ======================================
-app.listen(8080);
+server.listen(8080);
 console.log("App listening on port 8080");
